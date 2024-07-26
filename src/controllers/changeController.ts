@@ -3,7 +3,6 @@ import { makeChanges } from '../services/gitService';
 
 export const makeCodeChanges = async (req: Request, res: Response) => {
 
-    console.log('req.body', req.body)
     const {
         codeChanges,
         commitMessage,
