@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { makeChanges } from '../services/GitService';
 
 export const makeCodeChanges = async (req: Request, res: Response) => {
+
+    console.log('req.body', req.body)
     const {
         codeChanges,
         commitMessage,
@@ -13,6 +15,7 @@ export const makeCodeChanges = async (req: Request, res: Response) => {
     } = req.body;
 
     try {
+        console.log('here hit')
         const pullRequestUrl = await makeChanges(
             owner,
             repo,

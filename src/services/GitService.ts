@@ -15,7 +15,8 @@ export const makeChanges = async (
     const git = simpleGit();
     const octokit = new Octokit({ auth: githubToken });
 
-    // @ts-ignore
+    console.log('here');
+    //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
     // @ts-ignore
     try {
         // Clone the repository
@@ -57,3 +58,5 @@ export const makeChanges = async (
         await git.rm('-rf', repo);
     }
 };
+
+
