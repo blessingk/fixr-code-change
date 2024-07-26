@@ -1,4 +1,4 @@
-import simpleGit from 'simple-git';
+import simpleGit, {SimpleGit} from 'simple-git';
 import { Octokit } from '@octokit/rest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -29,7 +29,8 @@ export const makeChanges = async (
         console.log('changed', repoDir);
 
         // Create and switch to a new branch
-        await git.checkoutLocalBranch(featureBranch);
+        await createAndSwitchBranch(featureBranch, git)
+        //await git.checkoutLocalBranch(featureBranch);
         console.log('checkoutLocalBranch', featureBranch);
 
         // Apply the code changes
@@ -63,6 +64,7 @@ export const makeChanges = async (
     } finally {
         process.chdir('..');
         // @ts-ignore
+        await git.deleteLocalBranch(featureBranch);
         await removeDir(repoDir);
         //await git.rm('-rf', repoDir);
     }
@@ -83,4 +85,39 @@ const removeDir = (dirPath: string) => {
     });
 };
 
+const createAndSwitchBranch = async (branchName: string, git: SimpleGit, num: number = 0) => {
+    try {
+        await git.checkoutLocalBranch(branchName);
+        console.log(`Switched to new branch: ${branchName}`);
+    } catch (error) {
+        await git.checkoutLocalBranch(`${branchName}-${num}`)
+        num++
+        // await deleteLocalBranch(branchName, git)
+        // await deleteRemoteBranch(branchName, git)
+        console.error(`Failed to create or switch to branch: ${error}`);
+        throw error;
+    }
+}
+
+// Delete a remote branch
+const deleteRemoteBranch = async(branchName: string, git: SimpleGit) => {
+    try {
+        await git.push(['origin', '--delete', branchName]);
+        console.log(`Deleted remote branch: ${branchName}`);
+    } catch (error) {
+        console.error(`Failed to delete remote branch: ${error}`);
+        throw error;
+    }
+}
+
+
+const deleteLocalBranch = async(branchName: string, git: SimpleGit) => {
+    try {
+        await git.branch(['-d', branchName]);
+        console.log(`Deleted remote branch: ${branchName}`);
+    } catch (error) {
+        console.error(`Failed to delete remote branch: ${error}`);
+        throw error;
+    }
+}
 
