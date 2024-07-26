@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { makeCodeChanges } from '../controllers/ChangeController';
+import { makeCodeChanges } from '../controllers/changeController';
 
 const router = Router();
 

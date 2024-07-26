@@ -16,46 +16,45 @@ export const makeChanges = async (
 
     const git = simpleGit({
         config: [
-            `Authorization: token ${githubToken}`
-        ]
+            `user.name=fixr`,
+            `user.email=git@fixr.com`,
+        ],
     });
+
     const octokit = new Octokit({ auth: githubToken });
-    //todo - give directory
     const repoDir = path.join(process.env.HOME || '~', 'Sites/'+repo);
     console.log('GitService makeChanges');
     try {
         // Clone the repository
         console.log('repoDir', repoDir);
-        //const repoUrl = `git@github.com/${owner}/${repo}.git`;
-        const repoUrl = `https://github.com/${owner}/${repo}.git`;
+        const repoUrl = `https://${githubToken}:x-oauth-basic@github.com/${owner}/${repo}.git`;
         await git.clone(repoUrl, repoDir);
+        //await git.addRemote('origin', repoUrl);
         console.log('cloned', repoDir);
         await git.cwd(repoDir);
         console.log('changed repoDir', repoDir);
 
-        //await git.addRemote('origin', `git@github.com:${owner}/${repo}.git`)
-        //console.log('changed repoDir', repoDir);
-
-        const status = await git.status();
-        console.log('status', status)
         // Create and switch to a new branch
         await createAndSwitchBranch(featureBranch, git)
         console.log('checkoutLocalBranch', featureBranch);
 
         // Apply the code changes
         for (const change of codeChanges) {
-            const filePath = path.join(process.cwd()+'../', change.filePath);
+            const filePath = path.join(repoDir, change.filePath);
             await fs.mkdir(path.dirname(filePath), { recursive: true });
             await fs.writeFile(filePath, change.content, 'utf8');
+            const fileContent = await fs.readFile(filePath, 'utf8');
+            if (fileContent === change.content) {
+                console.log(`Changes applied successfully to ${filePath}`);
+            } else {
+                console.error(`Failed to apply changes to ${filePath}`);
+            }
         }
-
-        console.log('changes applied', codeChanges);
 
         // Commit and push the changes
         await git.add('.');
-        const com = await git.commit(commitMessage);
-        console.log('commit message', com)
-        await git.push(repoUrl, featureBranch);
+        await git.commit(commitMessage);
+        await git.push('origin', featureBranch);
 
         // Create a pull request
         const { data: pullRequest } = await octokit.pulls.create({
@@ -67,15 +66,14 @@ export const makeChanges = async (
             body: 'This PR contains automated code changes.',
         });
 
+        await removeDir(repoDir);
         return pullRequest.html_url;
     } catch (error) {
         // @ts-ignore
         throw new Error(`Failed to make changes: ${error.message}`);
     } finally {
-        //process.chdir('..');
         // @ts-ignore
         await removeDir(repoDir);
-        // await git.rm('-rf', repoDir);
     }
 };
 

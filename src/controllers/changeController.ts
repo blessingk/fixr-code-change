@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { makeChanges } from '../services/GitService';
+import { makeChanges } from '../services/gitService';
 
 export const makeCodeChanges = async (req: Request, res: Response) => {
 
@@ -30,6 +30,6 @@ export const makeCodeChanges = async (req: Request, res: Response) => {
     } catch (error) {
         // @ts-ignore
         console.error(`Error: ${error.message}`);
-        res.status(500).json({ error: 'An error occurred while processing your request.' });
+        res.status(500).json({ error: 'An error occurred while processing your request.', message: error });
     }
 };
