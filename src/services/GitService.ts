@@ -3,7 +3,6 @@ import { Octokit } from '@octokit/rest';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
-import { BranchService } from './BranchService';
 
 export const makeChanges = async (
     owner: string,
@@ -20,8 +19,6 @@ export const makeChanges = async (
     console.log('GitService makeChanges');
     // @ts-ignore
     const repoDir = path.join(process.cwd(), repo);
-    //const branchService = new BranchService(repoDir);
-    //console.log('branchService', branchService)
     try {
         // Clone the repository
         console.log('repoDir', repoDir);
@@ -30,19 +27,9 @@ export const makeChanges = async (
         process.chdir(repoDir);
         console.log('changed', repoDir);
 
-
         // Create and switch to a new branch
-        // const branchExists =  await branchService.branchExists(featureBranch);
-        // console.log('branchExists', branchExists);
-        // if (branchExists) {
-        //     // Delete the local branch if it exists
-        //     await branchService.deleteLocalBranch(featureBranch);
-        //     // Optionally delete the remote branch if it exists
-        //     await branchService.deleteRemoteBranch(featureBranch);
-        // }
-        // await branchService.createAndSwitchBranch(featureBranch);
-        //await createAndSwitchBranch(featureBranch, git)
-        await git.checkoutLocalBranch(featureBranch);
+        await createAndSwitchBranch(featureBranch, git)
+        // await git.checkoutLocalBranch(featureBranch);
         console.log('checkoutLocalBranch', featureBranch);
 
         // Apply the code changes
@@ -76,9 +63,8 @@ export const makeChanges = async (
     } finally {
         process.chdir('..');
         // @ts-ignore
-        //await git.deleteLocalBranch(featureBranch);
-        await removeDir(repoDir);
-        //await git.rm('-rf', repoDir);
+        //await removeDir(repoDir);
+        // await git.rm('-rf', repoDir);
     }
 };
 
@@ -99,13 +85,17 @@ const removeDir = (dirPath: string) => {
 
 const createAndSwitchBranch = async (branchName: string, git: SimpleGit, num: number = 0) => {
     try {
+        const branches = await git.branch();
+        if (branches.all.includes(branchName)) {
+            await git.checkout(branchName)
+            num++
+            return;
+        }
         await git.checkoutLocalBranch(branchName);
         console.log(`Switched to new branch: ${branchName}`);
     } catch (error) {
-        await git.checkoutLocalBranch(`${branchName}-${num}`)
         num++
-        // await deleteLocalBranch(branchName, git)
-        // await deleteRemoteBranch(branchName, git)
+        await git.checkout(branchName)
         console.error(`Failed to create or switch to branch: ${error}`);
         throw error;
     }
