@@ -17,7 +17,6 @@ export const makeChanges = async (
     const octokit = new Octokit({ auth: githubToken });
 
     console.log('GitService makeChanges');
-    //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
     // @ts-ignore
     const repoDir = path.join(process.cwd(), repo);
     try {
