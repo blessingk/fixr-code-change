@@ -13,23 +13,24 @@ export const makeChanges = async (
     commitMessage: string,
     githubToken: string
 ) => {
+
     const git = simpleGit();
     const octokit = new Octokit({ auth: githubToken });
-
+    //todo - give directory
+    const repoDir = path.join(process.env.HOME || '~', 'Sites/'+repo);
     console.log('GitService makeChanges');
-    // @ts-ignore
-    const repoDir = path.join(process.cwd(), repo);
     try {
         // Clone the repository
         console.log('repoDir', repoDir);
         await git.clone(`https://github.com/${owner}/${repo}.git`, repoDir);
         console.log('cloned', repoDir);
-        process.chdir(repoDir);
-        console.log('changed', repoDir);
+        await git.cwd(repoDir);
+        console.log('changed repoDir', repoDir);
 
+        const status = await git.status();
+        console.log('status', status)
         // Create and switch to a new branch
         await createAndSwitchBranch(featureBranch, git)
-        // await git.checkoutLocalBranch(featureBranch);
         console.log('checkoutLocalBranch', featureBranch);
 
         // Apply the code changes
@@ -63,7 +64,7 @@ export const makeChanges = async (
     } finally {
         process.chdir('..');
         // @ts-ignore
-        //await removeDir(repoDir);
+        await removeDir(repoDir);
         // await git.rm('-rf', repoDir);
     }
 };
