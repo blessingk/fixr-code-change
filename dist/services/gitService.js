@@ -11,7 +11,7 @@ export const makeChanges = async (owner, repo, baseBranch, featureBranch, codeCh
         ],
     });
     const octokit = new Octokit({ auth: githubToken });
-    const repoDir = path.join(process.env.HOME || '~', 'Sites/' + repo);
+    const repoDir = path.join(process.env.HOME || '~', process.cwd() + repo);
     console.log('GitService makeChanges');
     try {
         // Clone the repository
