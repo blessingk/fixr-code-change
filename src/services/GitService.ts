@@ -14,7 +14,11 @@ export const makeChanges = async (
     githubToken: string
 ) => {
 
-    const git = simpleGit();
+    const git = simpleGit({
+        config: [
+            `Authorization: token ${githubToken}`
+        ]
+    });
     const octokit = new Octokit({ auth: githubToken });
     //todo - give directory
     const repoDir = path.join(process.env.HOME || '~', 'Sites/'+repo);
@@ -22,10 +26,15 @@ export const makeChanges = async (
     try {
         // Clone the repository
         console.log('repoDir', repoDir);
-        await git.clone(`https://github.com/${owner}/${repo}.git`, repoDir);
+        //const repoUrl = `git@github.com/${owner}/${repo}.git`;
+        const repoUrl = `https://github.com/${owner}/${repo}.git`;
+        await git.clone(repoUrl, repoDir);
         console.log('cloned', repoDir);
         await git.cwd(repoDir);
         console.log('changed repoDir', repoDir);
+
+        //await git.addRemote('origin', `git@github.com:${owner}/${repo}.git`)
+        //console.log('changed repoDir', repoDir);
 
         const status = await git.status();
         console.log('status', status)
@@ -44,8 +53,9 @@ export const makeChanges = async (
 
         // Commit and push the changes
         await git.add('.');
-        await git.commit(commitMessage);
-        await git.push('origin', featureBranch);
+        const com = await git.commit(commitMessage);
+        console.log('commit message', com)
+        await git.push(repoUrl, featureBranch);
 
         // Create a pull request
         const { data: pullRequest } = await octokit.pulls.create({
@@ -62,7 +72,7 @@ export const makeChanges = async (
         // @ts-ignore
         throw new Error(`Failed to make changes: ${error.message}`);
     } finally {
-        process.chdir('..');
+        //process.chdir('..');
         // @ts-ignore
         await removeDir(repoDir);
         // await git.rm('-rf', repoDir);
@@ -84,42 +94,18 @@ const removeDir = (dirPath: string) => {
     });
 };
 
-const createAndSwitchBranch = async (branchName: string, git: SimpleGit, num: number = 0) => {
+const createAndSwitchBranch = async (branchName: string, git: SimpleGit) => {
     try {
         const branches = await git.branch();
         if (branches.all.includes(branchName)) {
             await git.checkout(branchName)
-            num++
             return;
         }
         await git.checkoutLocalBranch(branchName);
         console.log(`Switched to new branch: ${branchName}`);
     } catch (error) {
-        num++
         await git.checkout(branchName)
         console.error(`Failed to create or switch to branch: ${error}`);
-        throw error;
-    }
-}
-
-// Delete a remote branch
-const deleteRemoteBranch = async(branchName: string, git: SimpleGit) => {
-    try {
-        await git.push(['origin', '--delete', branchName]);
-        console.log(`Deleted remote branch: ${branchName}`);
-    } catch (error) {
-        console.error(`Failed to delete remote branch: ${error}`);
-        throw error;
-    }
-}
-
-
-const deleteLocalBranch = async(branchName: string, git: SimpleGit) => {
-    try {
-        await git.branch(['-d', branchName]);
-        console.log(`Deleted remote branch: ${branchName}`);
-    } catch (error) {
-        console.error(`Failed to delete remote branch: ${error}`);
         throw error;
     }
 }
