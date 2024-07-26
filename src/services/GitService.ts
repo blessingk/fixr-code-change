@@ -17,7 +17,7 @@ export const makeChanges = async (
     const octokit = new Octokit({ auth: githubToken });
 
     console.log('GitService makeChanges');
-    const repoDir = path.join('~/Sites', repo);
+    const repoDir = path.join(process.cwd()+'/../', repo);
     //const repoDir = path.join(process.cwd(), repo);
     try {
         // Clone the repository
@@ -61,10 +61,8 @@ export const makeChanges = async (
         // @ts-ignore
         throw new Error(`Failed to make changes: ${error.message}`);
     } finally {
-        process.chdir('..');
         // @ts-ignore
-        //await git.deleteLocalBranch(featureBranch);
-        await removeDir(repoDir);
+        //await removeDir(repoDir);
         //await git.rm('-rf', repoDir);
     }
 };
